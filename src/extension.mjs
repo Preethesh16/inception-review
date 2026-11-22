@@ -7,7 +7,7 @@ import { EditBatch } from "./batch.cjs";
 import { applyDocuments } from "./editor-apply.cjs";
 import { ReviewPanel } from "./panel.cjs";
 import { references, definitions } from "./mentions.cjs";
-import { referencedDefinitions } from "./neighbors.cjs";
+import { referencedDefinitions, relatedTest } from "./neighbors.cjs";
 import { rejectsSchema, replacementText } from "./inline.cjs";
 import { ModelRun } from "./failover.mjs";
 import { editorTools } from "./tools.cjs";
@@ -270,6 +270,33 @@ export function activate(context) {
             remaining -= def.excerpt.length;
           }
         }
+        const implementation = chosen
+          .filter(
+            (hit) => hit.name.endsWith(".py") && !/(^|\/)test_/.test(hit.name),
+          )
+          .map((hit) => hit.excerpt)
+          .join("\n");
+        for (const hit of chosen) {
+          if (remaining < 80) break;
+          if (
+            !/^(?:from|import) /m.test(hit.excerpt) ||
+            /def test_/.test(hit.excerpt)
+          )
+            continue;
+          const file = workspace.repository.files.find(
+            (file) => file.name === hit.name,
+          );
+          const [example] = relatedTest(
+            hit.name,
+            file.text,
+            implementation,
+            Math.min(remaining, 620),
+          );
+          if (example) {
+            neighbors.push(example);
+            remaining -= example.excerpt.length;
+          }
+        }
         event(
           "Retrieved " +
             chosen.length +
@@ -289,7 +316,8 @@ export function activate(context) {
                 x.name +
                 ":" +
                 x.line +
-                " · referenced definition",
+                " · " +
+                (x.reason || "referenced definition"),
             ),
           ],
         );

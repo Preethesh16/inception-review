@@ -20,3 +20,28 @@ test("follow a referenced definition including its decorator within the remainin
     [],
   );
 });
+
+test("choose an executable neighboring test by a referenced implementation identifier", () => {
+  const { relatedTest } = require("../src/neighbors.cjs");
+  const source = [
+    "def test_unrelated():",
+    "    assert True",
+    "",
+    "def test_invoice(client):",
+    "    result = client.invoke('invoice')",
+    "    assert result.ok",
+  ].join("\n");
+  const [hit] = relatedTest(
+    "tests/test_billing.py",
+    source,
+    "register(invoice_command)",
+    400,
+  );
+  assert.equal(hit.line, 4);
+  assert.equal(hit.definition, "test_invoice");
+  assert.match(hit.excerpt, /assert result.ok/);
+  assert.deepEqual(
+    relatedTest("tests/test_other.py", source, "register(other_worker)", 400),
+    [],
+  );
+});
