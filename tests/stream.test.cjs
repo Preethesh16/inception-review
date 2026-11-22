@@ -32,3 +32,37 @@ test("resume a quiet stream from its last durable event without creating another
   assert.deepEqual(types, ["turn.created", "tool.response", "turn.done"]);
   assert.deepEqual(notifications, ["stream.reconnected"]);
 });
+
+test("use the actual final event when the live stream has already expired", async () => {
+  const { ForgeTurn } = await import("../src/session.mjs");
+  const run = new ForgeTurn("http://localhost:8790", { onEvent() {} });
+  run.session = "existing-session";
+  const final = {
+    type: "turn.done",
+    id: "final-event",
+    state: { status: "done", output: { content: "verified" } },
+  };
+  const old = { type: "tool.response", id: "last-seen" };
+  async function* dropped() {
+    yield old;
+    throw new TypeError("terminated");
+  }
+  run.client = {
+    sessions: {
+      subscribeToTurn: async () => {
+        throw Object.assign(new Error("expired"), { statusCode: 412 });
+      },
+      listTurnEvents: async (session, turn, opts) => {
+        assert.deepEqual(
+          [session, turn, opts],
+          ["existing-session", "original-turn", { order: "desc", limit: 1 }],
+        );
+        return [final];
+      },
+    },
+  };
+  const observed = [];
+  for await (const event of run.observe(dropped(), "original-turn"))
+    observed.push(event);
+  assert.deepEqual(observed, [old, final]);
+});

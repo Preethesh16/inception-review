@@ -53,12 +53,33 @@ class ForgeTurn {
           throw error;
         attempts++;
         this.onEvent({ type: "stream.reconnected" });
-        stream = await this.client.sessions.subscribeToTurn(
-          this.session,
-          turnId,
-          partial ? { fromEventId: cursor } : { afterEventId: cursor },
-          { abortSignal: this.controller.signal },
-        );
+        const options = { abortSignal: this.controller.signal };
+        try {
+          stream = await this.client.sessions.subscribeToTurn(
+            this.session,
+            turnId,
+            partial ? { fromEventId: cursor } : { afterEventId: cursor },
+            options,
+          );
+        } catch (resumeError) {
+          if (resumeError.statusCode !== 412) throw resumeError;
+          // The live stream may already have expired after normal completion.
+          // Only consume its persisted terminal event, never replay approvals.
+          const last = await this.client.sessions.listTurnEvents(
+            this.session,
+            turnId,
+            { order: "desc", limit: 1 },
+            options,
+          );
+          for await (const event of last) {
+            if (event.type === "turn.done") {
+              yield event;
+              return;
+            }
+            break;
+          }
+          throw resumeError;
+        }
       }
     }
   }
