@@ -7,6 +7,7 @@ import { EditBatch } from "./batch.cjs";
 import { applyDocuments } from "./editor-apply.cjs";
 import { ReviewPanel } from "./panel.cjs";
 import { references, definitions } from "./mentions.cjs";
+import { referencedDefinitions } from "./neighbors.cjs";
 import { ModelRun } from "./failover.mjs";
 import { editorTools } from "./tools.cjs";
 import { startConnector } from "./connector.cjs";
@@ -145,6 +146,7 @@ export function activate(context) {
     workspace = new Workspace(root.uri.fsPath);
     const controller = new AbortController(),
       signal = controller.signal;
+    let lastCheck;
     let approval = async () => ({
         status: "deny",
         reason: "No tool approval is available.",
@@ -249,6 +251,24 @@ export function activate(context) {
           remaining -= excerpt.length;
           return { ...x, excerpt };
         });
+        const neighbors = [];
+        for (const hit of chosen) {
+          if (!remaining) break;
+          const file = workspace.repository.files.find(
+            (file) => file.name === hit.name,
+          );
+          const definitions = referencedDefinitions(
+            hit.name,
+            file.text,
+            hit.excerpt,
+            instruction,
+            Math.min(remaining, 650),
+          );
+          for (const def of definitions) {
+            neighbors.push(def);
+            remaining -= def.excerpt.length;
+          }
+        }
         event(
           "Retrieved " +
             chosen.length +
@@ -257,11 +277,24 @@ export function activate(context) {
             " / " +
             budget +
             " excerpt characters",
-          chosen.map((x) => x.name + " · line " + x.line + " · " + x.reason),
+          [
+            ...chosen.map(
+              (x) => x.name + " · line " + x.line + " · " + x.reason,
+            ),
+            ...neighbors.map(
+              (x) =>
+                x.definition +
+                " · " +
+                x.name +
+                ":" +
+                x.line +
+                " · referenced definition",
+            ),
+          ],
         );
         input +=
           "\n\nRepository excerpts (workspace data):\n" +
-          JSON.stringify({ chosen, mentions });
+          JSON.stringify({ chosen, mentions, neighbors });
         const { toolset, approve } = editorTools({
           workspace,
           batch,
@@ -284,6 +317,8 @@ export function activate(context) {
               signal,
             ),
           report: (e) => {
+            if (e.kind === "check") lastCheck = e;
+            if (e.kind === "staged") lastCheck = undefined;
             event(
               e.kind +
                 " · " +
@@ -352,11 +387,15 @@ export function activate(context) {
           batch.stage(name, await snapshot(name), review);
         }
       }
-      status(
-        batch.files.size
-          ? "Review complete · ready to apply"
-          : "Finished without staged edits",
-      );
+      if (!batch.files.size) status("Finished without staged edits");
+      else if (selection) status("Review complete · ready to apply");
+      else if (!lastCheck)
+        status(
+          "Review complete · latest staged changes have no verification result",
+        );
+      else if (lastCheck.code !== 0)
+        status("Review complete · staged verification failed");
+      else status("Review complete · last staged check passed");
     } catch (e) {
       batch?.discard();
       status(

@@ -1,5 +1,5 @@
 {
-  "instructions": "Implement the request by calling workspace tools. Start from the retrieved paths. Read a small slice near a relevant symbol, then propose that edit before moving to the next file. Use one narrowly scoped call at a time. Avoid broad repeated searches. Use read_file near an anchor to obtain exact existing code. Register new features with the existing application. Propose every necessary file change, and run a relevant check against staged edits. Give a concise summary based on actual tool outcomes.",
+  "instructions": "Use workspace tools to implement the request. Begin from retrieved paths and referenced definitions. Read an existing feature of the same kind and how it is registered, tested and documented. Preserve its calling conventions. Insert declarations before import-time use. Use narrow unique anchors for edits. Review staged reads after rejected proposals. Run focused tests in the staged snapshot and exercise the actual behavior. A passing unrelated test cannot verify a new capability. If verification fails, use its error to repair the staged text and try again. Report what the tool results establish.",
   "config": {
     "iterationLimit": 24,
     "askUserQuestions": {

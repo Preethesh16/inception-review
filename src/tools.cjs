@@ -26,11 +26,28 @@ function editorTools({
   const prepare = async (args) => {
     const snap = await snapshot(args.path);
     const current = batch.open(args.path, snap);
+    if (
+      args.path.endsWith(".py") &&
+      args.placement === "append" &&
+      /^if __name__ *== *["']__main__["'] *:/m.test(current)
+    ) {
+      throw new Error(
+        "This Python module has a script entry point. Read the nearest existing declaration and insert_before an exact anchor above its first use.",
+      );
+    }
     let proposed;
     if (args.placement === "append") proposed = current + args.replacement;
     else if (args.placement === "prepend")
       proposed = args.replacement + current;
-    else proposed = createReplacement(current, args.original, args.replacement);
+    else {
+      const text =
+        args.placement === "insert_before"
+          ? args.replacement + args.original
+          : args.placement === "insert_after"
+            ? args.original + args.replacement
+            : args.replacement;
+      proposed = createReplacement(current, args.original, text);
+    }
     return { snap, proposal: batch.prepare(args.path, snap, proposed) };
   };
   const toolset = {
@@ -99,10 +116,16 @@ function editorTools({
     },
     propose_edit: {
       description:
-        "Propose one code, test or documentation edit. For replace, original is an exact unique substring from the file. For append or prepend use an empty original. The user reviews each hunk before staging.",
+        "Propose one code, test or documentation edit. For replace or insert_before/insert_after, original is an exact unique substring from read_file. Insertions preserve that anchor. Insert declarations above the first code that uses them. For append or prepend use an empty original. The user reviews each hunk before staging.",
       inputSchema: {
         path: z.string(),
-        placement: z.enum(["replace", "append", "prepend"]),
+        placement: z.enum([
+          "replace",
+          "insert_before",
+          "insert_after",
+          "append",
+          "prepend",
+        ]),
         original: z.string(),
         replacement: z.string(),
       },
@@ -130,7 +153,7 @@ function editorTools({
         consume("run_check", args);
         const result = await runCheck(args);
         report({ kind: "check", ...args, ...result });
-        return result;
+        return { ...result, output: result.output.slice(-3500) };
       },
     },
   };
