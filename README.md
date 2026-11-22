@@ -78,3 +78,5 @@ One warm local benchmark on Flask indexed 215 text files and 1.14 MB in 344 ms. 
 The design draws on iterative retrieval in [RepoCoder](https://arxiv.org/abs/2303.12570), the editor/tool interface in [SWE-agent](https://arxiv.org/abs/2405.15793), localization and validation in [Agentless](https://arxiv.org/abs/2407.01489), [Aider's repository map](https://aider.chat/docs/repomap.html), and [Continue's selection editing](https://docs.continue.dev/ide-extensions/edit/quick-start). Codex assisted with research, implementation, tests and recording.
 
 The [retrieval study](research/README.md) includes runnable benchmarks and model-trial results.
+
+For the native editor integration test, run `npm run test:editor` with desktop VS Code available on your PATH and a graphical display. It creates a temporary profile and workspace, applies a partial three-file batch, performs native Undo, and verifies that a manual edit stops a later batch from overwriting any file.

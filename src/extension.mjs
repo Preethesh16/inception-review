@@ -297,6 +297,9 @@ export function activate(context) {
           JSON.stringify({ chosen, mentions, neighbors });
         const { toolset, approve } = editorTools({
           workspace,
+          initialLocations: new Map(
+            chosen.map((hit) => [hit.name, Math.max(1, hit.line - 4)]),
+          ),
           batch,
           snapshot,
           signal,

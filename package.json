@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test tests/*.test.cjs",
-    "vscode:prepublish": "npm run build"
+    "vscode:prepublish": "npm run build",
+    "test:editor": "npm run build && node scripts/test-editor.mjs"
   },
   "license": "MIT",
   "type": "commonjs",

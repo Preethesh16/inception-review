@@ -6,6 +6,7 @@ const { findText } = require("./trace-search.cjs");
 
 function editorTools({
   workspace,
+  initialLocations = new Map(),
   batch,
   snapshot,
   review,
@@ -82,7 +83,7 @@ function editorTools({
     },
     read_file: {
       description:
-        "Read existing or staged file text. Start at a line number, or near the first occurrence of a literal anchor. Returns exact text suitable for an original edit anchor.",
+        "Read existing or staged file text. Supply a line number or a literal anchor. With neither, the initial retrieval location is used if available. Returns exact text suitable for an original edit anchor.",
       inputSchema: {
         path: z.string(),
         start: z.number().int().positive().optional(),
@@ -90,7 +91,12 @@ function editorTools({
         count: z.number().int().min(1).max(120).optional(),
       },
       annotations: { readOnlyHint: true },
-      run: async ({ path, start = 1, near, count = 45 }) => {
+      run: async ({
+        path,
+        start = initialLocations.get(path) || 1,
+        near,
+        count = 32,
+      }) => {
         signal.throwIfAborted();
         const snap = await snapshot(path),
           text = batch.open(path, snap),
@@ -134,10 +140,23 @@ function editorTools({
         const { proposal } = consume("propose_edit", args);
         const n = batch.stage(args.path, await snapshot(args.path), proposal);
         report({ kind: "staged", path: args.path, hunks: n });
+        const tests = [...batch.files.keys()].filter((name) =>
+          /(?:^|\/)(?:test_[^/]+|[^/]+_test)\.py$/.test(name),
+        );
         return {
           path: args.path,
           acceptedHunks: n,
-          stagedFiles: batch.files.size,
+          stagedFiles: [...batch.files.keys()],
+          verification:
+            "Staged changes have not yet been checked. Review the run_check result before reporting success.",
+          ...(tests.length
+            ? {
+                suggestedCheck: {
+                  program: "pytest",
+                  args: [...tests.slice(0, 16), "-q"],
+                },
+              }
+            : {}),
         };
       },
     },
