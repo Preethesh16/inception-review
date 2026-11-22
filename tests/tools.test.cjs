@@ -117,3 +117,23 @@ test("a blind append beyond a Python entry point is returned for a scoped propos
   );
   assert.equal(batch.files.size, 0);
 });
+
+test("documentation reads return jump targets once and exclude fenced examples", async () => {
+  const text = "# Commands\n```sh\n# sample comment\n```\n## Run locally\n";
+  const { toolset } = editorTools({
+    batch: new EditBatch(),
+    snapshot: async () => ({version: 1, text}),
+    signal: new AbortController().signal,
+    report() {},
+  });
+  const args = {path: "docs/cli.md", count: 2};
+  const first = await toolset.read_file.run(args);
+  assert.deepEqual(first.sections, [
+    {line: 1, heading: "Commands"}, {line: 5, heading: "Run locally"},
+  ]);
+  assert.equal((await toolset.read_file.run(args)).sections, undefined);
+  const { sectionLocations } = require("../src/trace-search.cjs");
+  assert.deepEqual(sectionLocations("guide.rst", ["Intro", "=====", "", "New section", "-----------"]), [
+    {line: 1, heading: "Intro"}, {line: 4, heading: "New section"},
+  ]);
+});

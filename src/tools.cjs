@@ -3,7 +3,7 @@
 const { z } = require("zod");
 const { checkPythonSyntax } = require("./syntax.cjs");
 const { createReplacement, insertAtAnchor } = require("./review.cjs");
-const { findText } = require("./trace-search.cjs");
+const { findText, sectionLocations } = require("./trace-search.cjs");
 const { definitions } = require("./mentions.cjs");
 
 function editorTools({
@@ -18,6 +18,7 @@ function editorTools({
   report,
 }) {
   const permitted = new Map();
+  const outlined = new Set();
   const consume = (tool, args) => {
     const key = JSON.stringify([tool, args]);
     const record = permitted.get(key);
@@ -128,10 +129,13 @@ function editorTools({
         if (start > lines.length)
           throw new Error("Start line exceeds " + lines.length + ".");
         report({ kind: "read", path, start });
+        const sections = outlined.has(path) ? [] : sectionLocations(path, lines);
+        outlined.add(path);
         return {
           path,
           start,
           lines: lines.length,
+          ...(sections.length ? { sections } : {}),
           text: lines
             .slice(start - 1, start - 1 + count)
             .join("\n")
