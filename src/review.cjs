@@ -103,4 +103,4 @@ class Review {
   }
 }
 
-module.exports = { Review, createReplacement, insertAtAnchor };
+module.exports = { Review, createReplacement, insertAtAnchor, makeHunks };

@@ -1,6 +1,6 @@
 {
   "name": "inception-review",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Review and verify repository edits from a local TrueForge coding agent.",
   "main": "./dist/extension.cjs",
   "scripts": {

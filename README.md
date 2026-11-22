@@ -2,6 +2,22 @@
 
 A VS Code extension for reviewing a coding agent's work before it reaches your files. Ask for a change, see which passages the agent used, and decide which hunks to keep. TrueForge runs the model and its tools. Accepted changes stay in a staging area until you apply the batch.
 
+[Watch the 3:07 Round 1 demo](https://drive.google.com/file/d/1kCmFuTXIw4GI0ZpjvolNvqZgGPXa9rBj/view) · [Read the submitted scorecard](https://drive.google.com/file/d/1IYJNe6QdABzSNbXwfmD6wkvkI2fK3qQZ/view) · [Download the VS Code extension](https://github.com/Preethesh16/inception-review/releases/download/v0.1.1/inception-review-0.1.1.vsix)
+
+![The Flask function selected on the left and its two reviewable hunks in the VS Code panel on the right](docs/review.png)
+
+### What the recording demonstrates
+
+| Time | Flask 3.1.3 task | Observed result |
+| --- | --- | --- |
+| 0:00 | A · Inline edit | The reviewed change makes `FLASK_DEBUG=off` print `False`. Native Undo restores the checkout. |
+| 0:31 | B · Repository-wide change | The agent locates implementation, docs and tests. The new test fails and the proposed command is missing from help. At 2:22 a separate retry shows the syntax guard keeping a broken insertion out of the checkout. |
+| 2:32 | C · Unavailable primary model | TrueForge switches to the fallback. Reject and Cancel both leave Git clean. |
+
+**Since the recording**, version 0.1.1 handles the misplaced insertion seen in the retry. The model included unchanged surrounding lines in its payload. Replaying that exact proposal on the pinned source now produces one reviewable hunk. A fresh autonomous Task B pass is still unverified.
+
+To try the packaged build, use **Extensions → … → Install from VSIX** in desktop VS Code. Start TrueForge and configure a model using steps 2 and 3 below, open the target Git checkout, then run **Inception Review: Open Agent**. The source build remains available for inspection and development.
+
 ## Run from a clean clone
 
 Use Node 22 or 24, npm, Git, and desktop VS Code 1.102 or later. The optional staged command verifier currently requires Linux with bubblewrap and enabled user namespaces. Model inference can run locally or through a provider configured in TrueForge.
@@ -91,6 +107,16 @@ pytest tests/test_cli.py -q
 flask --app "$demo_dir/checkout_demo.py" --help
 flask --app "$demo_dir/checkout_demo.py" config
 ```
+
+### Check a candidate independently
+
+With the Flask test environment activated, run the verifier from the extension repository. Point it at the checkout containing the agent’s applied edits.
+
+```sh
+python scripts/check-flask.py ../flask-3.1.3
+```
+
+It reports the candidate revision, runs Flask’s CLI tests, checks command registration and invokes the new command on a temporary app. It checks four embedded sensitive-key patterns and verifies that an ordinary string, integer and boolean survive JSON conversion. Each check has its own result. Failure returns a nonzero exit code. An untouched Flask checkout passes the existing CLI tests and fails the new behavior checks. Inspect the tests and documentation diff separately to assess coverage and the three-file requirement.
 
 ## Starting point and dependencies
 

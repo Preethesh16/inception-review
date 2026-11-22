@@ -1,8 +1,16 @@
 "use strict";
 
 const { z } = require("zod");
-const { checkPythonSyntax } = require("./syntax.cjs");
-const { createReplacement, insertAtAnchor } = require("./review.cjs");
+const {
+  checkPythonSyntax,
+  checkReviewedPython,
+  ProposalSyntaxError,
+} = require("./syntax.cjs");
+const {
+  createReplacement,
+  insertAtAnchor,
+  makeHunks,
+} = require("./review.cjs");
 const { findText, sectionLocations } = require("./trace-search.cjs");
 const { definitions } = require("./mentions.cjs");
 
@@ -54,7 +62,38 @@ function editorTools({
         args.placement,
       );
     else proposed = createReplacement(current, args.original, args.replacement);
-    await checkPythonSyntax(args.path, current, proposed, signal);
+    try {
+      await checkPythonSyntax(args.path, current, proposed, signal);
+    } catch (error) {
+      // Some models return a complete replacement passage for an insertion.
+      // Recover only one addition strictly inside unchanged surrounding lines.
+      if (
+        !(error instanceof ProposalSyntaxError) ||
+        !["insert_before", "insert_after"].includes(args.placement)
+      )
+        throw error;
+      const changes = makeHunks(args.original, args.replacement);
+      const [hunk] = changes;
+      if (
+        changes.length !== 1 ||
+        hunk.start !== hunk.end ||
+        hunk.start === 0 ||
+        hunk.end >= args.original.length
+      )
+        throw error;
+      const candidate = createReplacement(
+        current,
+        args.original,
+        args.replacement,
+      );
+      if (!(await checkPythonSyntax(args.path, current, candidate, signal)))
+        throw error;
+      proposed = candidate;
+      report({
+        kind: "Recovered one insertion from its surrounding context",
+        path: args.path,
+      });
+    }
     return { snap, proposal: batch.prepare(args.path, snap, proposed) };
   };
   const toolset = {
@@ -223,6 +262,7 @@ function editorTools({
       if (!record.proposal.hunks.length)
         return { status: "deny", reason: "No changes in the proposal." };
       await review(args.path, record.proposal, signal);
+      await checkReviewedPython(args.path, record.proposal, signal);
       if (!record.proposal.hunks.some((h) => h.decision === "accept"))
         return { status: "deny", reason: "User rejected the proposed edits." };
     } else if (key === "run_check") {

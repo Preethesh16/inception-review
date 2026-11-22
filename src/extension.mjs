@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { Workspace } from "./workspace.cjs";
 import { EditBatch } from "./batch.cjs";
 import { applyDocuments } from "./editor-apply.cjs";
+import { checkPythonSyntax, checkReviewedPython } from "./syntax.cjs";
 import { ReviewPanel } from "./panel.cjs";
 import { references, definitions } from "./mentions.cjs";
 import { referencedDefinitions, relatedTest } from "./neighbors.cjs";
@@ -429,9 +430,11 @@ export function activate(context) {
           original.text.slice(0, start) +
           replacement +
           original.text.slice(end);
+        await checkPythonSyntax(name, original.text, proposed, signal);
         const review = batch.prepare(name, original, proposed);
         if (review.hunks.length) {
           await panel.review(name, review, signal);
+          await checkReviewedPython(name, review, signal);
           batch.stage(name, await snapshot(name), review);
         }
       }

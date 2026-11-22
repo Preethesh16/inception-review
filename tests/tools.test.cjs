@@ -173,3 +173,60 @@ test("long reads preserve line boundaries and offer the next exact line", async 
   });
   assert.equal(next.text, lines[first.nextStart - 1]);
 });
+
+test(
+  "a replacement-shaped insertion is recovered only when its unchanged anchors bracket a single addition",
+  {
+    skip:
+      require("node:child_process").spawnSync("python3", ["-V"]).status !== 0,
+  },
+  async () => {
+    const source =
+      "def existing():\n    return 1\n\n\nregistry = dict(\n    enabled=True,\n)\n";
+    const anchor = "    return 1\n\n\nregistry = dict(";
+    const replacement =
+      "    return 1\n\n\ndef added():\n    return 2\n\n\nregistry = dict(";
+    const batch = new EditBatch();
+    const snap = { version: 1, text: source };
+    let reviews = 0;
+    const { toolset, approve } = editorTools({
+      batch,
+      snapshot: async () => snap,
+      signal: new AbortController().signal,
+      report() {},
+      review: async (_, proposal) => {
+        reviews++;
+        assert.equal(proposal.hunks.length, 1);
+        proposal.decide(0, "accept");
+      },
+    });
+    const args = {
+      path: "registry.py",
+      placement: "insert_after",
+      original: anchor,
+      replacement,
+    };
+    const call = (a) => ({
+      function: { name: "propose_edit", arguments: JSON.stringify(a) },
+    });
+    await assert.rejects(
+      () =>
+        approve(
+          call({
+            ...args,
+            replacement: replacement.replace("return 1", "return 4"),
+          }),
+        ),
+      /syntax error/,
+    );
+    assert.equal(reviews, 0);
+    assert.deepEqual(await approve(call(args)), { status: "allow" });
+    assert.equal(batch.files.size, 0);
+    await toolset.propose_edit.run(args);
+    assert.equal(
+      batch.open(args.path, snap),
+      source.replace(anchor, replacement),
+    );
+    assert.equal(reviews, 1);
+  },
+);
