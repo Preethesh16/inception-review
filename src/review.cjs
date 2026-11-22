@@ -19,6 +19,38 @@ function createReplacement(original, before, after) {
   );
 }
 
+function insertAtAnchor(source, anchor, text, placement) {
+  const start = source.indexOf(anchor);
+  const before = source.slice(0, start);
+  const after = source.slice(start + anchor.length);
+  const fullLines =
+    start >= 0 &&
+    (!before || before.endsWith("\n")) &&
+    (!after || /^(?:\r?\n)/.test(after) || anchor.endsWith("\n"));
+  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  if (fullLines && text) {
+    if (placement === "insert_before" && !text.endsWith("\n")) text += eol;
+    if (
+      placement === "insert_after" &&
+      !anchor.endsWith("\n") &&
+      !/^\r?\n/.test(text)
+    )
+      text = eol + text;
+    if (
+      placement === "insert_after" &&
+      anchor.endsWith("\n") &&
+      after &&
+      !text.endsWith("\n")
+    )
+      text += eol;
+  }
+  return createReplacement(
+    source,
+    anchor,
+    placement === "insert_before" ? text + anchor : anchor + text,
+  );
+}
+
 // Offsets are UTF-16 units, as used by VS Code's TextDocument.positionAt.
 function makeHunks(original, proposed) {
   const changes = diffLines(original, proposed, { timeout: 1000 });
@@ -71,4 +103,4 @@ class Review {
   }
 }
 
-module.exports = { Review, createReplacement };
+module.exports = { Review, createReplacement, insertAtAnchor };

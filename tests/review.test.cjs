@@ -50,3 +50,18 @@ test("all-accepted hunks reconstruct the intended text under randomized edits", 
     base = next;
   }
 });
+test("line anchors retain separators while substring insertions remain exact", () => {
+  const { insertAtAnchor } = require("../src/review.cjs");
+  assert.equal(
+    insertAtAnchor("a\r\nb\r\n", "b", "before", "insert_before"),
+    "a\r\nbefore\r\nb\r\n",
+  );
+  assert.equal(
+    insertAtAnchor("a\nb\n", "a", "next", "insert_after"),
+    "a\nnext\nb\n",
+  );
+  assert.equal(
+    insertAtAnchor("hello there", "there", "over ", "insert_before"),
+    "hello over there",
+  );
+});

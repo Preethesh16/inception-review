@@ -1,8 +1,10 @@
 "use strict";
 
 const { z } = require("zod");
-const { createReplacement } = require("./review.cjs");
+const { checkPythonSyntax } = require("./syntax.cjs");
+const { createReplacement, insertAtAnchor } = require("./review.cjs");
 const { findText } = require("./trace-search.cjs");
+const { definitions } = require("./mentions.cjs");
 
 function editorTools({
   workspace,
@@ -40,15 +42,18 @@ function editorTools({
     if (args.placement === "append") proposed = current + args.replacement;
     else if (args.placement === "prepend")
       proposed = args.replacement + current;
-    else {
-      const text =
-        args.placement === "insert_before"
-          ? args.replacement + args.original
-          : args.placement === "insert_after"
-            ? args.original + args.replacement
-            : args.replacement;
-      proposed = createReplacement(current, args.original, text);
-    }
+    else if (
+      args.placement === "insert_before" ||
+      args.placement === "insert_after"
+    )
+      proposed = insertAtAnchor(
+        current,
+        args.original,
+        args.replacement,
+        args.placement,
+      );
+    else proposed = createReplacement(current, args.original, args.replacement);
+    await checkPythonSyntax(args.path, current, proposed, signal);
     return { snap, proposal: batch.prepare(args.path, snap, proposed) };
   };
   const toolset = {
@@ -83,11 +88,12 @@ function editorTools({
     },
     read_file: {
       description:
-        "Read existing or staged file text. Supply a line number or a literal anchor. With neither, the initial retrieval location is used if available. Returns exact text suitable for an original edit anchor.",
+        "Read existing or staged file text. Supply a line number, a declaration symbol, or a literal anchor. With neither, the initial retrieval location is used if available. Returns exact text suitable for an original edit anchor.",
       inputSchema: {
         path: z.string(),
         start: z.number().int().positive().optional(),
         near: z.string().min(1).optional(),
+        symbol: z.string().min(1).optional(),
         count: z.number().int().min(1).max(120).optional(),
       },
       annotations: { readOnlyHint: true },
@@ -95,13 +101,26 @@ function editorTools({
         path,
         start = initialLocations.get(path) || 1,
         near,
+        symbol,
         count = 32,
       }) => {
         signal.throwIfAborted();
         const snap = await snapshot(path),
           text = batch.open(path, snap),
           lines = text.split(/\r?\n/);
-        if (near) {
+        if (symbol) {
+          const matches = definitions(
+            { files: [{ name: path, text }] },
+            symbol,
+          );
+          if (matches.length !== 1)
+            throw new Error(
+              matches.length
+                ? "More than one declaration matches; use its exact start line."
+                : "No matching declaration in this file.",
+            );
+          start = Math.max(1, matches[0].line - 4);
+        } else if (near) {
           const i = lines.findIndex((l) => l.includes(near));
           if (i < 0) throw new Error("No matching line in this path.");
           start = Math.max(1, i - 4);

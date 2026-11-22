@@ -8,6 +8,7 @@ import { applyDocuments } from "./editor-apply.cjs";
 import { ReviewPanel } from "./panel.cjs";
 import { references, definitions } from "./mentions.cjs";
 import { referencedDefinitions } from "./neighbors.cjs";
+import { rejectsSchema, replacementText } from "./inline.cjs";
 import { ModelRun } from "./failover.mjs";
 import { editorTools } from "./tools.cjs";
 import { startConnector } from "./connector.cjs";
@@ -368,7 +369,24 @@ export function activate(context) {
       }
       signal.throwIfAborted();
       status("Streaming from TrueForge", true);
-      const { state } = await run.run(spec, input, fallback);
+      let result = await run.run(spec, input, fallback);
+      let fenced = false;
+      if (selection && rejectsSchema(result.state)) {
+        signal.throwIfAborted();
+        event(
+          "Model does not support structured output · retrying with a fenced replacement",
+        );
+        const textSpec = {
+          ...spec,
+          model: { ...spec.model, name: result.model },
+          instructions:
+            "Revise only the selected text. Return the complete revised selection in one fenced code block, preserving indentation. Include no surrounding explanation.",
+        };
+        delete textSpec.responseFormat;
+        result = await run.run(textSpec, input);
+        fenced = true;
+      }
+      const { state } = result;
       signal.throwIfAborted();
       if (state.status !== "done")
         throw new Error(
@@ -377,9 +395,7 @@ export function activate(context) {
       if (selection) {
         const { doc, start, end, original } = selection,
           name = path.relative(root.uri.fsPath, doc.uri.fsPath);
-        const replacement = JSON.parse(state.output.content).replacement;
-        if (typeof replacement !== "string")
-          throw new Error("Model did not return a replacement string.");
+        const replacement = replacementText(state.output?.content, fenced);
         const proposed =
           original.text.slice(0, start) +
           replacement +

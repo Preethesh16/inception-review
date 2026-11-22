@@ -31,7 +31,7 @@ Use Node 22 or 24, npm, Git, and desktop VS Code 1.102 or later. The optional st
      -H 'Content-Type: application/json' --data-binary @examples/model-provider.json
    ```
 
-   A model used for agent mode must support native tool calls. The inline model must support JSON-schema output. You can configure different models for these jobs. Credentials belong in TrueForge.
+   A model used for agent mode must support native tool calls. The inline request prefers JSON-schema output. If the provider explicitly rejects that format, the extension retries with a single fenced replacement block. You can configure different models for these jobs. Credentials belong in TrueForge.
 
 4. From the extension repository, open a local Git checkout in a development host.
 
@@ -71,7 +71,7 @@ Team Inception built the extension from scratch. The Flask tag is the demonstrat
 
 The initial retriever scores text with BM25-style term weighting and filename matches, reserves two places for direct matches, then looks for companion files sharing an implementation filename. It splits a configurable character budget across short passages. Any remaining room can hold a Python declaration referenced by a retrieved passage, including its nearby decorators. Ranking reasons, paths and line numbers accompany the excerpts. The cap covers excerpt text. Tool schemas, user messages and metadata also consume model context. TrueForge can compact older turns as a session grows.
 
-The MCP connector binds to loopback and authenticates each request with an ephemeral bearer token. TrueForge pauses for approval before an edit or verification call. The editor binds that approval to the exact arguments and consumes it once. It validates document versions and contents when staging and immediately before the native multi-file edit. Clean documents are saved. Existing unsaved editor changes stay available for the user to save.
+The MCP connector binds to loopback and authenticates each request with an ephemeral bearer token. TrueForge pauses for approval before an edit or verification call. The editor binds that approval to the exact arguments and consumes it once. For Python, an available isolated interpreter parses the proposed source without executing it and reports newly introduced syntax errors to the agent. Full-line insertions preserve line boundaries, including CRLF. It validates document versions and contents when staging and immediately before the native multi-file edit. Clean documents are saved. Existing unsaved editor changes stay available for the user to save.
 
 One warm local benchmark on Flask indexed 215 text files and 1.14 MB in 344 ms. Across 25 repetitions of the fixed CLI question the median retrieval time was 20.7 ms and the 95th percentile was 27.7 ms. The selected files included implementation, tests and documentation in 2,165 excerpt characters. Following a reference to a neighboring declaration added 456 characters and preserved the 3,500-character cap. These are local measurements, not a forecast of hours or money saved. The engineering goal is to let one reviewer reject a risky hunk or test a candidate without first cleaning up their working tree.
 
