@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "type": "custom",
+    "name": "local-editor",
+    "base_url": "http://127.0.0.1:8080/v1",
+    "models": [
+      {
+        "name": "instruct",
+        "model_id": "instruct",
+        "properties": { "context_length": 12288, "max_output_tokens": 2300 }
+      }
+    ]
+  }
+}

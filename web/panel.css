@@ -1,0 +1,124 @@
+:root {
+  color-scheme: light dark;
+}
+body {
+  padding: 18px;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+}
+main {
+  max-width: 780px;
+  margin: auto;
+}
+header,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  margin-bottom: 18px;
+}
+h1 {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+h2 {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+button {
+  font: inherit;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+button.primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  min-height: 70px;
+  font: inherit;
+  border-radius: 3px;
+  padding: 9px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+}
+textarea:focus,
+button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+.actions {
+  margin-top: 7px;
+}
+#status {
+  font-weight: 600;
+  margin: 16px 0 4px;
+}
+#model,
+small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+#activity {
+  padding-left: 20px;
+  max-height: 230px;
+  overflow: auto;
+}
+li {
+  padding: 3px 0;
+  overflow-wrap: anywhere;
+}
+pre {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#stream {
+  max-height: 190px;
+  overflow: auto;
+}
+article {
+  border-top: 1px solid var(--vscode-panel-border);
+  padding: 9px 0;
+}
+article pre {
+  margin: 3px 0;
+  padding: 5px 8px;
+}
+.del {
+  background: var(--vscode-diffEditor-removedTextBackground);
+  border-left: 2px solid var(--vscode-editorGutter-deletedBackground);
+}
+.add {
+  background: var(--vscode-diffEditor-insertedTextBackground);
+  border-left: 2px solid var(--vscode-editorGutter-addedBackground);
+}
+button[aria-pressed="true"] {
+  outline: 2px solid var(--vscode-focusBorder);
+}
+[hidden] {
+  display: none !important;
+}

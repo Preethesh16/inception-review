@@ -1,0 +1,8 @@
+{
+  "inceptionReview.serverUrl": "http://localhost:8790",
+  "inceptionReview.model": "local-editor/instruct",
+  "inceptionReview.inlineModel": "",
+  "inceptionReview.fallbackModel": "",
+  "inceptionReview.contextCharacters": 3500,
+  "inceptionReview.compactionTokens": 7000
+}

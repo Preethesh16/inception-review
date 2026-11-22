@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src {{source}}; script-src 'nonce-{{nonce}}'"
+    />
+    <link rel="stylesheet" href="{{css}}" />
+    <title>Inception Review</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Inception Review</h1>
+        <button id="session" hidden>Open session</button>
+      </header>
+      <form id="composer">
+        <label for="request">Workspace request</label
+        ><textarea
+          id="request"
+          rows="4"
+          placeholder="Describe a change, or reference @file and @symbol"
+        ></textarea>
+        <div class="actions">
+          <button id="run" class="primary" type="submit">Run agent</button
+          ><button type="button" id="cancel" hidden>Cancel run</button>
+        </div>
+      </form>
+      <p role="status" id="status">Ready</p>
+      <div id="model"></div>
+      <ol id="activity" aria-label="Run activity"></ol>
+      <pre id="stream" aria-label="Model output"></pre>
+      <section id="review" hidden>
+        <h2 id="filename"></h2>
+        <div id="hunks"></div>
+        <button id="confirm" class="primary" disabled>Confirm review</button>
+      </section>
+      <section id="batch" hidden>
+        <h2>Staged changes</h2>
+        <ul id="files"></ul>
+        <div class="actions">
+          <button id="apply" class="primary">Apply reviewed changes</button
+          ><button id="discard">Discard</button>
+        </div>
+      </section>
+    </main>
+    <script nonce="{{nonce}}" src="{{js}}"></script>
+  </body>
+</html>

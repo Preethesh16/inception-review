@@ -1,0 +1,109 @@
+{
+  "name": "inception-review",
+  "version": "0.1.0",
+  "description": "Review and verify repository edits from a local TrueForge coding agent.",
+  "main": "./dist/extension.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "vscode:prepublish": "npm run build"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@truefoundry/trueforge-sdk": "^0.185.0",
+    "diff": "^8.0.4",
+    "zod": "^4.6.7"
+  },
+  "displayName": "Inception Review",
+  "publisher": "inception-team",
+  "engines": {
+    "vscode": "^1.102.0",
+    "node": ">=22"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "inceptionReview.open",
+        "title": "Inception Review: Open Agent"
+      },
+      {
+        "command": "inceptionReview.inline",
+        "title": "Inception Review: Edit Selection"
+      },
+      {
+        "command": "inceptionReview.cancel",
+        "title": "Inception Review: Cancel Run"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "inceptionReview.inline",
+        "key": "ctrl+alt+i",
+        "mac": "cmd+alt+i",
+        "when": "editorTextFocus && editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Inception Review",
+      "properties": {
+        "inceptionReview.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8790",
+          "description": "Local TrueForge server URL."
+        },
+        "inceptionReview.model": {
+          "type": "string",
+          "default": "",
+          "description": "TrueForge model identifier for the workspace agent."
+        },
+        "inceptionReview.inlineModel": {
+          "type": "string",
+          "default": "",
+          "description": "Optional TrueForge model for selection edits. Defaults to the workspace model."
+        },
+        "inceptionReview.fallbackModel": {
+          "type": "string",
+          "default": "",
+          "description": "Optional fallback model identifier after a primary model failure."
+        },
+        "inceptionReview.pythonEnvironment": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to a trusted Python virtual environment for isolated checks."
+        },
+        "inceptionReview.contextCharacters": {
+          "type": "integer",
+          "default": 3500,
+          "description": "Maximum characters of retrieved source excerpts per initial agent request.",
+          "minimum": 500,
+          "maximum": 12000
+        },
+        "inceptionReview.compactionTokens": {
+          "type": "integer",
+          "default": 7000,
+          "minimum": 1500,
+          "maximum": 100000,
+          "description": "Estimated history tokens before TrueForge compacts older agent steps."
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Preethesh16/inception-review.git"
+  },
+  "homepage": "https://github.com/Preethesh16/inception-review"
+}
