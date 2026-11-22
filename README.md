@@ -50,7 +50,7 @@ Use Node 22 or 24, npm, Git, and desktop VS Code 1.102 or later. The optional st
 - **Agent mode.** Enter an instruction without paths, or include `@file(src/example.py)` and `@symbol:example`. Expand **Selected context** to inspect the initial locations and ranking reasons. Search, read, edit and verification calls appear as they happen.
 - **Verification.** A proposed command requires approval. The Linux verifier copies eligible workspace files into a disposable directory, overlays the accepted changes, disables networking, and runs the selected program there. Supported programs are pytest, Python, Flask, Node and npm. Set **Python Environment** to an absolute trusted virtual environment path when dependencies are required.
 - **Undo and cancel.** Use editor Undo after applying a batch. Cancel during generation or review to discard staged edits. If a file changes during review, the editor refuses the stale batch.
-- **Fallback.** Configure a second model under **Fallback Model**. A classified model failure can start a new TrueForge session on the fallback before any edit has been staged. Every switch appears in the activity list.
+- **Fallback.** Configure a second model under **Fallback Model**. A classified model failure can start a new TrueForge session on the fallback before any edit has been staged. Every switch appears in the activity list. If an active stream disconnects after a known turn event, the extension can resume that same turn from its event cursor.
 
 ## Exercise the Flask fixture
 

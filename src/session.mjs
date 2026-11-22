@@ -24,6 +24,45 @@ class ForgeTurn {
       );
   }
 
+  // A local model can be quiet longer than an HTTP connection's idle limit.
+  // Resume the same server-side turn instead of starting another generation.
+  async *observe(stream, turnId) {
+    let cursor;
+    let partial = false;
+    let attempts = 0;
+    for (;;) {
+      try {
+        for await (const event of stream) {
+          if (event.type === "turn.created") turnId = event.turnId;
+          if (event.id) cursor = event.id;
+          partial = isEventDelta(event) || event.type === "model.message";
+          yield event;
+        }
+        return;
+      } catch (error) {
+        this.controller.signal.throwIfAborted();
+        const reason = [error.message, error.cause?.code, error.code].join(" ");
+        if (
+          !turnId ||
+          !cursor ||
+          attempts >= 3 ||
+          !/terminated|socket|ECONNRESET|UND_ERR_BODY_TIMEOUT|network/i.test(
+            reason,
+          )
+        )
+          throw error;
+        attempts++;
+        this.onEvent({ type: "stream.reconnected" });
+        stream = await this.client.sessions.subscribeToTurn(
+          this.session,
+          turnId,
+          partial ? { fromEventId: cursor } : { afterEventId: cursor },
+          { abortSignal: this.controller.signal },
+        );
+      }
+    }
+  }
+
   async run(spec, content) {
     const options = { abortSignal: this.controller.signal };
     const { data } = await this.client.sessions.create(
@@ -43,7 +82,7 @@ class ForgeTurn {
     for (;;) {
       const requested = [];
       let pausedAt;
-      for await (const event of stream) {
+      for await (const event of this.observe(stream, turn)) {
         this.controller.signal.throwIfAborted();
         if (isEventDelta(event)) {
           const message = events.get(event.id);

@@ -175,6 +175,8 @@ export function activate(context) {
           e.reason === "compaction"
         )
           event("TrueForge compacted earlier session history");
+        if (e.type === "stream.reconnected")
+          event("Resuming the same TrueForge turn after a connection interruption");
         if (e.type === "model.failover")
           event("Primary model unavailable · switching to " + e.to);
         if (e.type === "model.message.delta" || e.type === "model.message") {
