@@ -76,3 +76,5 @@ The MCP connector binds to loopback and authenticates each request with an ephem
 One warm local benchmark on Flask indexed 215 text files and 1.14 MB in 344 ms. Across 25 repetitions of the fixed CLI question the median retrieval time was 20.7 ms and the 95th percentile was 27.7 ms. The selected files included implementation, tests and documentation in 2,165 excerpt characters. These are local measurements, not a forecast of hours or money saved. The engineering goal is to let one reviewer reject a risky hunk or test a candidate without first cleaning up their working tree.
 
 The design draws on iterative retrieval in [RepoCoder](https://arxiv.org/abs/2303.12570), the editor/tool interface in [SWE-agent](https://arxiv.org/abs/2405.15793), localization and validation in [Agentless](https://arxiv.org/abs/2407.01489), [Aider's repository map](https://aider.chat/docs/repomap.html), and [Continue's selection editing](https://docs.continue.dev/ide-extensions/edit/quick-start). Codex assisted with research, implementation, tests and recording.
+
+The [retrieval study](research/README.md) includes runnable benchmarks and model-trial results.
