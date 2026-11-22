@@ -63,6 +63,35 @@ python -m pip install -e '.[async,dotenv]' 'pytest>=8,<9' blinker
 python -m pytest tests/test_cli.py -q
 ```
 
+Set **Inception Review: Python Environment** to the absolute path of the virtual environment. The integrated terminal uses the activated environment. The staged verifier uses the configured path.
+
+To check the inline edit after applying it, run this command in the Flask checkout. Use the editor’s Undo command and run `git status --short` before testing the unreachable model.
+
+```sh
+FLASK_DEBUG=off python -c "from flask.helpers import get_debug_flag; print(get_debug_flag())"
+```
+
+To check the multi-file task, create a sample app outside the checkout. Run these commands in the activated environment after applying the agent’s proposal. The output should expose the ordinary site name and mask all four synthetic credential values with three asterisks.
+
+```sh
+demo_dir=$(mktemp -d)
+cat > "$demo_dir/checkout_demo.py" <<'PYAPP'
+from flask import Flask
+
+app = Flask(__name__)
+app.config.update(
+    SITE_NAME="Review demo",
+    API_TOKEN="sample-token",
+    DATABASE_PASSWORD="sample-password",
+    SERVICE_KEY="sample-key",
+    SECRET_SETTING="sample-secret",
+)
+PYAPP
+pytest tests/test_cli.py -q
+flask --app "$demo_dir/checkout_demo.py" --help
+flask --app "$demo_dir/checkout_demo.py" config
+```
+
 ## Starting point and dependencies
 
 Team Inception built the extension from scratch. The Flask tag is the demonstration target. The extension uses the TrueForge TypeScript SDK, the Model Context Protocol SDK, Zod, jsdiff, and esbuild. The MIT licence covers our source. Each ordinary dependency retains its own licence.
