@@ -39,3 +39,9 @@ Two quantized open-weight models ran locally through llama.cpp and TrueForge. Bo
 - [Agentless, Xia et al.](https://arxiv.org/abs/2407.01489)
 - [Aider repository map](https://aider.chat/docs/repomap.html)
 - [Continue selection edit](https://docs.continue.dev/ide-extensions/edit/quick-start)
+
+## What broke in the editor trial
+
+The first complete Qwen3 editor run discovered all three Flask paths and produced reviewed edits, but its new test raised a NameError and the built-in command was absent from help. The visible three-file diff and the model's final message were insufficient evidence of success. A rerun also exposed a line insertion that joined two Python statements when the model omitted a trailing newline.
+
+The extension now follows references from retrieved passages to nearby declarations when there is space left in the same excerpt budget. It supports insertion around exact anchors, preserves full-line separators, asks for an anchored edit before a Python script entry point, and rejects a new Python syntax error when a local parser is available. The panel reports whether the current staged revision has a check result. A later edit invalidates the previous result. The isolated verifier allows the agent to repair its own candidate while the original working tree remains available.
