@@ -148,3 +148,28 @@ test("documentation reads return jump targets once and exclude fenced examples",
     ],
   );
 });
+
+test("long reads preserve line boundaries and offer the next exact line", async () => {
+  const lines = Array.from({ length: 100 }, (_, i) =>
+    String(i + 1).padEnd(90, "."),
+  );
+  const { toolset } = editorTools({
+    batch: new EditBatch(),
+    snapshot: async () => ({ version: 1, text: lines.join("\n") }),
+    signal: new AbortController().signal,
+    report() {},
+  });
+  const first = await toolset.read_file.run({
+    path: "source.py",
+    start: 1,
+    count: 100,
+  });
+  assert.ok(first.text.length <= 2400);
+  assert.equal(first.text, lines.slice(0, first.nextStart - 1).join("\n"));
+  const next = await toolset.read_file.run({
+    path: "source.py",
+    start: first.nextStart,
+    count: 1,
+  });
+  assert.equal(next.text, lines[first.nextStart - 1]);
+});

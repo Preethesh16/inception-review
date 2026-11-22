@@ -89,7 +89,7 @@ function editorTools({
     },
     read_file: {
       description:
-        "Read existing or staged file text. Supply a line number, a declaration symbol, or a literal anchor. With neither, the initial retrieval location is used if available. Returns exact text suitable for an original edit anchor.",
+        "Read existing or staged file text. Supply a line number, a declaration symbol, or a literal anchor. With neither, the initial retrieval location is used if available. Returns exact text suitable for an original edit anchor. Long reads end at a line boundary after about 2,400 characters; nextStart identifies the continuation.",
       inputSchema: {
         path: z.string(),
         start: z.number().int().positive().optional(),
@@ -129,17 +129,28 @@ function editorTools({
         if (start > lines.length)
           throw new Error("Start line exceeds " + lines.length + ".");
         report({ kind: "read", path, start });
-        const sections = outlined.has(path) ? [] : sectionLocations(path, lines);
+        const sections = outlined.has(path)
+          ? []
+          : sectionLocations(path, lines);
         outlined.add(path);
+        const selected = [];
+        let characters = 0;
+        const end = Math.min(lines.length, start - 1 + count);
+        for (let i = start - 1; i < end; i++) {
+          const line = lines[i];
+          if (selected.length && characters + line.length + 1 > 2400) break;
+          selected.push(line);
+          characters += line.length + 1;
+        }
+        const next = start + selected.length;
         return {
           path,
           start,
           lines: lines.length,
           ...(sections.length ? { sections } : {}),
-          text: lines
-            .slice(start - 1, start - 1 + count)
-            .join("\n")
-            .slice(0, 10000),
+          ...(next <= lines.length ? { nextStart: next } : {}),
+          ...(selected[0]?.length > 10000 ? { firstLineTruncated: true } : {}),
+          text: selected.join("\n").slice(0, 10000),
         };
       },
     },
