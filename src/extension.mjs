@@ -198,7 +198,10 @@ export function activate(context) {
       let spec = {
           model: {
             name: model,
-            params: { temperature: 0, maxTokens: selection ? 1000 : 2300 },
+            params: {
+              temperature: selection ? 0 : settings.get("agentTemperature", 0),
+              maxTokens: selection ? 1000 : 2300,
+            },
           },
           config: {
             ...agentDefinition.config,

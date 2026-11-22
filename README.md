@@ -31,7 +31,7 @@ Use Node 22 or 24, npm, Git, and desktop VS Code 1.102 or later. The optional st
      -H 'Content-Type: application/json' --data-binary @examples/model-provider.json
    ```
 
-   A model used for agent mode must support native tool calls. The inline request prefers JSON-schema output. If the provider explicitly rejects that format, the extension retries with a single fenced replacement block. You can configure different models for these jobs. Credentials belong in TrueForge.
+   A model used for agent mode must support native tool calls. The inline request prefers JSON-schema output. If the provider explicitly rejects that format, the extension retries with a single fenced replacement block. You can configure different models for these jobs. The workspace agent has a separate sampling temperature setting, initially zero. Credentials belong in TrueForge.
 
 4. From the extension repository, open a local Git checkout in a development host.
 

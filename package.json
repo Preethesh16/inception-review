@@ -67,6 +67,13 @@
           "default": "",
           "description": "TrueForge model identifier for the workspace agent."
         },
+        "inceptionReview.agentTemperature": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature for workspace agent turns. Selection edits keep their deterministic setting."
+        },
         "inceptionReview.inlineModel": {
           "type": "string",
           "default": "",
