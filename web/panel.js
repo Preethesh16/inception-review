@@ -71,6 +71,15 @@ function renderReview(data) {
   });
   $("review").scrollIntoView({ block: "nearest" });
 }
+let commandId;
+for (const [id, allow] of [
+  ["allowCheck", true],
+  ["denyCheck", false],
+]) {
+  $(id).addEventListener("click", () =>
+    post("commandDecision", { id: commandId, allow }),
+  );
+}
 window.addEventListener("message", ({ data }) => {
   switch (data.type) {
     case "start":
@@ -112,7 +121,17 @@ window.addEventListener("message", ({ data }) => {
     case "review":
       renderReview(data);
       break;
+    case "commandReview":
+      commandId = data.id;
+      $("commandArgs").textContent = [
+        data.program,
+        ...data.args.map((a) => JSON.stringify(a)),
+      ].join(" ");
+      $("commandReview").hidden = false;
+      $("commandReview").scrollIntoView({ block: "nearest" });
+      break;
     case "reviewDone":
+      $("commandReview").hidden = true;
       $("review").hidden = true;
       break;
     case "batch":

@@ -305,12 +305,8 @@ export function activate(context) {
           snapshot,
           signal,
           review: (p, r, s) => panel.review(p, r, s),
-          confirmCommand: async ({ program, args }) =>
-            (await vscode.window.showInformationMessage(
-              "Run in a disposable workspace: " + [program, ...args].join(" "),
-              { modal: true },
-              "Run check",
-            )) === "Run check",
+          confirmCommand: (args, approvalSignal) =>
+            panel.confirmCommand(args, approvalSignal),
           runCheck: ({ program, args }) =>
             verify(
               workspace.root,

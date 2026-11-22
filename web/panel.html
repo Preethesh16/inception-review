@@ -37,6 +37,17 @@
         <div id="hunks"></div>
         <button id="confirm" class="primary" disabled>Confirm review</button>
       </section>
+      <section id="commandReview" hidden>
+        <h2>Verify staged changes</h2>
+        <p>
+          This command runs in a disposable workspace with networking disabled.
+        </p>
+        <pre id="commandArgs"></pre>
+        <div class="actions">
+          <button id="allowCheck" class="primary">Run check</button
+          ><button id="denyCheck">Decline check</button>
+        </div>
+      </section>
       <section id="batch" hidden>
         <h2>Staged changes</h2>
         <ul id="files"></ul>

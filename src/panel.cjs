@@ -33,9 +33,20 @@ class ReviewPanel {
         for (const e of this.outbox) await w.postMessage(e);
         this.outbox = [];
       } else if (msg.type === "review") {
-        if (msg.id !== this.pending?.id || !Array.isArray(msg.decisions))
+        if (
+          this.pending?.type !== "review" ||
+          msg.id !== this.pending.id ||
+          !Array.isArray(msg.decisions)
+        )
           return;
         this.pending.finish(msg.decisions);
+      } else if (msg.type === "commandDecision") {
+        if (
+          this.pending?.type === "commandReview" &&
+          msg.id === this.pending.id &&
+          typeof msg.allow === "boolean"
+        )
+          this.pending.finish(msg.allow);
       } else {
         try {
           await onAction(msg);
@@ -59,12 +70,12 @@ class ReviewPanel {
   reveal() {
     this.view.reveal(vscode.ViewColumn.Beside);
   }
-  async review(path, proposal, signal) {
+  ask(type, payload, signal) {
     signal.throwIfAborted();
     if (this.closed) throw new Error("Review panel closed.");
-    if (this.pending) throw new Error("Finish the current review first.");
+    if (this.pending) throw new Error("Finish the current approval first.");
     const id = randomUUID();
-    const decisions = await new Promise((resolve) => {
+    return new Promise((resolve) => {
       const abort = () => finish(null);
       const finish = (value) => {
         signal.removeEventListener("abort", abort);
@@ -72,19 +83,27 @@ class ReviewPanel {
         this.post({ type: "reviewDone" });
         resolve(value);
       };
-      this.pending = { id, finish };
+      this.pending = { type, id, finish };
       signal.addEventListener("abort", abort, { once: true });
-      this.post({
-        type: "review",
-        id,
+      this.post({ type, id, ...payload });
+    });
+  }
+  async confirmCommand(args, signal) {
+    return (await this.ask("commandReview", args, signal)) === true;
+  }
+  async review(path, proposal, signal) {
+    const decisions = await this.ask(
+      "review",
+      {
         path,
         hunks: proposal.hunks.map((h) => ({
           line: proposal.original.slice(0, h.start).split("\n").length,
           old: proposal.original.slice(h.start, h.end),
           new: h.replacement,
         })),
-      });
-    });
+      },
+      signal,
+    );
     if (
       !decisions ||
       decisions.length !== proposal.hunks.length ||
